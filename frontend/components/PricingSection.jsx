@@ -1,5 +1,7 @@
-const PricingSection = () => {
-  return null;
-};
+"use client";
 
-export default PricingSection;
+import { PricingTable } from "@clerk/nextjs";
+
+export default function PricingSection() {
+  return <PricingTable />;
+}
