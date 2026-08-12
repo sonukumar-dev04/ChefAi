@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import PricingModal from "./PricingModal";
 import UserDropdown from "./UserDropdown";
-import { SignInButton, SignUpButton } from "@clerk/nextjs";
+import { SignInButton, SignUpButton, useUser } from "@clerk/nextjs";
 import HowToCookModal from "./HowToCookModal";
 
 const NAV_LINKS = [
@@ -24,19 +24,34 @@ const NAV_LINKS = [
 ];
 
 const Header = () => {
+  const { isLoaded: clerkLoaded, isSignedIn } = useUser();
+
   const [user, setUser] = useState(null);
+  const [checkingUser, setCheckingUser] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
+    if (!clerkLoaded) return;
+
+    if (!isSignedIn) {
+      setUser(null);
+      setCheckingUser(false);
+      return;
+    }
+
+    setCheckingUser(true);
     fetch("/api/check-user")
       .then((res) => res.json())
-      .then((data) => setUser(data));
-  }, []);
+      .then((data) => setUser(data))
+      .catch(() => setUser(null))
+      .finally(() => setCheckingUser(false));
+  }, [clerkLoaded, isSignedIn]);
 
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
+  const authLoading = !clerkLoaded || (isSignedIn && checkingUser);
 
   const isPro = user?.subscriptionTier === "pro";
 
@@ -57,6 +72,7 @@ const Header = () => {
             <div
               className="w-7 h-7 rounded-lg flex items-center justify-center"
               style={{ backgroundColor: "#c0392b" }}
+              suppressHydrationWarning
             >
               <Flame className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
             </div>
@@ -113,7 +129,34 @@ const Header = () => {
               <HowToCookModal />
             </div>
 
-            {user ? (
+            {authLoading ? (
+              <div className="flex items-center gap-2">
+                <style jsx>{`
+                  @keyframes headerShimmer {
+                    0% {
+                      background-position: -120% 0;
+                    }
+                    100% {
+                      background-position: 220% 0;
+                    }
+                  }
+                  .header-shimmer {
+                    background-color: #f0e6da;
+                    background-image: linear-gradient(
+                      90deg,
+                      rgba(240, 230, 218, 0) 0%,
+                      rgba(255, 255, 255, 0.9) 50%,
+                      rgba(240, 230, 218, 0) 100%
+                    );
+                    background-size: 60% 100%;
+                    background-repeat: no-repeat;
+                    animation: headerShimmer 1.3s ease-in-out infinite;
+                  }
+                `}</style>
+                <div className="hidden sm:block h-8 w-20 rounded-full header-shimmer" />
+                <div className="w-8 h-8 rounded-full header-shimmer" />
+              </div>
+            ) : user ? (
               <>
                 <PricingModal subscriptionTier={user.subscriptionTier}>
                   <button
@@ -219,7 +262,7 @@ const Header = () => {
             <div className="my-2 h-px" style={{ backgroundColor: "#e8e0d5" }} />
 
             {/* Cook a Dish — full row treatment */}
-              <HowToCookModal />
+            <HowToCookModal />
 
             {/* Upgrade — only for free users */}
             {!isPro && (
