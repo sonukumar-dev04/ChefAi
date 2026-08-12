@@ -3,12 +3,14 @@ import {
   ArrowLeft,
   ArrowRight,
   Loader2,
+  LogIn,
   RefreshCw,
   UtensilsCrossed,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ClockLoader } from "react-spinners";
+import { SignInButton } from "@clerk/nextjs";
 import { P } from "./recipe-ui";
 
 export function NoRecipeState() {
@@ -90,6 +92,76 @@ export function LoadingState({ recipeName }) {
             className="h-full rounded-full animate-pulse"
             style={{ background: P.grad, width: "60%" }}
           />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function AuthRequiredState({ recipeName }) {
+  const router = useRouter();
+  return (
+    <div
+      className="min-h-screen flex items-center justify-center px-4"
+      style={{ backgroundColor: P.bg }}
+    >
+      <div
+        className="max-w-md w-full rounded-3xl p-12 text-center"
+        style={{
+          backgroundColor: P.dark,
+          border: `1px solid ${P.dark2}`,
+          boxShadow: "0 8px 40px rgba(192,57,43,0.15)",
+        }}
+      >
+        <div
+          className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5"
+          style={{
+            backgroundColor: "rgba(217,119,6,0.18)",
+            border: "1px solid rgba(217,119,6,0.3)",
+          }}
+        >
+          <LogIn className="w-8 h-8" style={{ color: P.orange }} />
+        </div>
+        <h2 className="text-2xl font-black mb-2" style={{ color: "#fff" }}>
+          Sign in to continue
+        </h2>
+        <p className="font-light mb-7" style={{ color: "#a87d5e" }}>
+          {recipeName ? (
+            <>
+              You need to be signed in for our AI chef to cook up{" "}
+              <span className="font-bold" style={{ color: P.orange }}>
+                {recipeName}
+              </span>
+              .
+            </>
+          ) : (
+            "You need to be signed in to generate a recipe."
+          )}
+        </p>
+        <div className="flex gap-3 justify-center">
+          <button
+            onClick={() => router.push("/dashboard")}
+            className="inline-flex items-center gap-2 text-sm font-bold px-4 py-3 rounded-xl transition-colors"
+            style={{
+              backgroundColor: "rgba(255,255,255,0.07)",
+              color: "#c9a87c",
+              border: "1px solid rgba(255,255,255,0.1)",
+            }}
+          >
+            <ArrowLeft className="w-4 h-4" /> Go back
+          </button>
+          <SignInButton mode="modal">
+            <button
+              className="inline-flex items-center gap-2 text-sm font-bold px-4 py-3 rounded-xl transition-opacity hover:opacity-90"
+              style={{
+                background: P.grad,
+                color: "#fff",
+                boxShadow: "0 4px 16px rgba(192,57,43,0.35)",
+              }}
+            >
+              <LogIn className="w-4 h-4" /> Sign In
+            </button>
+          </SignInButton>
         </div>
       </div>
     </div>
