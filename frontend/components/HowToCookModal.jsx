@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { ChefHat, Search, Sparkles, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
+import { useUser, useClerk } from "@clerk/nextjs";
 
 const suggestions = [
   "Butter Chicken",
@@ -24,12 +25,28 @@ export default function HowToCookModal() {
   const [recipeName, setRecipeName] = useState("");
   const [isOpen, setIsOpen] = useState(false);
 
+  const { isLoaded: authLoaded, isSignedIn } = useUser();
+  const { openSignIn } = useClerk();
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!recipeName.trim()) {
       toast.error("Please enter a recipe name");
       return;
     }
+
+    if (!authLoaded) {
+      toast.error("Still checking your session — try again in a moment");
+      return;
+    }
+
+    if (!isSignedIn) {
+      handleOpenChange(false);
+      toast.error("Please sign in to generate a recipe");
+      openSignIn();
+      return;
+    }
+
     router.push(`/recipe?cook=${encodeURIComponent(recipeName.trim())}`);
     handleOpenChange(false);
   };
@@ -100,6 +117,21 @@ export default function HowToCookModal() {
 
         {/* ── Body ───────────────────────────────────────────── */}
         <div className="px-6 py-6">
+          {/* Notice for signed-out users */}
+          {authLoaded && !isSignedIn && (
+            <div
+              className="mb-4 px-4 py-3 rounded-xl text-xs font-semibold"
+              style={{
+                backgroundColor: "#fff3e0",
+                color: "#b45309",
+                border: "1px solid #f5c6a0",
+              }}
+            >
+              You&apos;ll need to sign in to generate a recipe. We&apos;ll
+              prompt you when you hit &quot;Show Me How&quot;.
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Input */}
             <div>
@@ -195,7 +227,9 @@ export default function HowToCookModal() {
               }}
             >
               <ChefHat className="w-4 h-4" />
-              Show Me How
+              {authLoaded && !isSignedIn
+                ? "Sign In to Continue"
+                : "Show Me How"}
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
