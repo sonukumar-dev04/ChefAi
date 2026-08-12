@@ -1,6 +1,5 @@
-import { Sparkles } from "lucide-react";
+import { Lock, Sparkles } from "lucide-react";
 
-// ── Shared palette tokens ──────────────────────────────────────────
 export const P = {
   bg: "#faf7f2",
   dark: "#1a0a00",
