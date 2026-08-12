@@ -1,8 +1,15 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import { getCountryFlag } from "@/lib/data";
+import { getCountryFlag, SUPPORTED_CUISINES } from "@/lib/data";
 
 export default function CuisineGrid({ areas }) {
+  const uniqueAreas = Array.from(
+    new Map(areas.map((area) => [area.strArea, area])).values(),
+  );
+  const displayedAreas = uniqueAreas.filter((area) =>
+    SUPPORTED_CUISINES.includes(area.strArea),
+  );
+
   return (
     <section className="pb-16">
       <div className="mb-10">
@@ -32,7 +39,7 @@ export default function CuisineGrid({ areas }) {
       />
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-        {areas.map((area) => (
+        {displayedAreas.map((area) => (
           <Link
             key={area.strArea}
             href={`/recipes/cuisine/${area.strArea
