@@ -1,8 +1,8 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 import { Clock, Flame, Users } from "lucide-react";
 import useFetch from "@/hooks/use-fetch";
 import {
@@ -16,6 +16,7 @@ import { P, StatCard } from "@/components/recipe-page/recipe-ui";
 import {
   NoRecipeState,
   LoadingState,
+  AuthRequiredState,
   ErrorState,
   SuspenseFallback,
 } from "@/components/recipe-page/RecipeStates";
@@ -31,6 +32,8 @@ function RecipeContent() {
   const searchParams = useSearchParams();
   const recipeName = searchParams.get("cook");
 
+  const { isLoaded: authLoaded, isSignedIn } = useUser();
+
   const [recipe, setRecipe] = useState(null);
   const [recipeId, setRecipeId] = useState(null);
   const [isSaved, setIsSaved] = useState(false);
@@ -38,6 +41,7 @@ function RecipeContent() {
   const {
     loading: loadingRecipe,
     data: recipeData,
+    error: recipeError,
     fn: fetchRecipe,
   } = useFetch(getOrGenerateRecipe);
   const {
@@ -52,12 +56,12 @@ function RecipeContent() {
   } = useFetch(removeRecipeFromCollection);
 
   useEffect(() => {
-    if (recipeName && !recipe) {
-      const formData = new FormData();
-      formData.append("recipeName", recipeName);
-      fetchRecipe(formData);
-    }
-  }, [recipeName]);
+    if (!recipeName || !authLoaded || !isSignedIn || recipe) return;
+
+    const formData = new FormData();
+    formData.append("recipeName", recipeName);
+    fetchRecipe(formData);
+  }, [recipeName, authLoaded, isSignedIn]);
 
   useEffect(() => {
     if (recipeData?.success) {
@@ -96,9 +100,21 @@ function RecipeContent() {
   };
 
   if (!recipeName) return <NoRecipeState />;
+
+  if (!authLoaded) return <LoadingState recipeName={recipeName} />;
+
+  if (!isSignedIn) return <AuthRequiredState recipeName={recipeName} />;
+
   if (loadingRecipe === null || loadingRecipe)
     return <LoadingState recipeName={recipeName} />;
-  if (loadingRecipe === false && !recipe) return <ErrorState />;
+
+  if (loadingRecipe === false && !recipe) {
+    const isAuthError = recipeError?.message
+      ?.toLowerCase()
+      .includes("not authenticated");
+    if (isAuthError) return <AuthRequiredState recipeName={recipeName} />;
+    return <ErrorState />;
+  }
 
   const isPro = recipeData?.isPro;
 
